@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THAI HANSUNG BOLT CO., LTD. - Supplier Performance Monitoring (IATF 16949 Clause 8.4.2.4)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN for Dashboard Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- JSZip CDN for File Compression -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- Signature Pad CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: #f1f5f9;
+    }
+    
+    /* Print Styles: Force Single Page A4 fit & Compact padding */
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10.5pt !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      body.printing-car #mainHeader,
+      body.printing-car #mainContainer {
+        display: none !important;
+      }
+      body.printing-car #carModal {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      body.printing-car #carModalContent {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 6mm;
+      }
+      .doc-control-box {
+        border: 1px solid #334155 !important;
+        background-color: #ffffff !important;
+      }
+      .print-compact-mb {
+        margin-bottom: 8px !important;
+      }
+      .print-compact-p {
+        padding: 4px 8px !important;
+      }
+    }
+    
+    .doc-control-box {
+      border: 1px solid #cbd5e1;
+      background-color: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: #334155;
+      text-align: right;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-100 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500"></div>
+      
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+          <i data-lucide="shield-check" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-900">THAI HANSUNG BOLT CO., LTD.</h2>
+        <p class="text-xs text-slate-500 mt-1">ระบบเฝ้าติดตามสมรรถนะผู้ส่งมอบ (IATF 16949 Clause 8.4.2.4)</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">เลือกสิทธิ์การเข้าใช้งาน</label>
+          <select id="loginRole" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm bg-slate-50">
+            <option value="Admin">Admin (ผู้ดูแลระบบ - 111220)</option>
+            <option value="Purchasing">Purchasing (ฝ่ายจัดซื้อ - 111221)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">รหัสผ่านเข้าใช้งาน (Passcode)</label>
+          <input type="password" id="loginPassword" required placeholder="••••••" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm">
+        </div>
+
+        <div id="loginError" class="hidden text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200 text-center font-medium">
+          รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md shadow-blue-500/20 flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i> เข้าสู่ระบบ (Log In)
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- HEADER NAVBAR -->
+  <header id="mainHeader" class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-4">
+          <div class="relative group cursor-pointer">
+            <img id="navLogo" src="https://via.placeholder.com/150x50?text=THB+LOGO" alt="Company Logo" class="h-10 object-contain rounded">
+            <label for="logoUpload" class="absolute inset-0 bg-black/50 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded cursor-pointer">
+              เปลี่ยน LOGO
+            </label>
+            <input type="file" id="logoUpload" accept="image/*" class="hidden" onchange="changeLogo(event)">
+          </div>
+          <div class="border-l border-slate-200 pl-4">
+            <h1 class="text-base font-bold text-slate-900 leading-tight">THAI HANSUNG BOLT CO., LTD.</h1>
+            <p class="text-xs text-slate-500">Supplier Performance Monitoring System (IATF 16949 Clause 8.4.2.4)</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
+          <button onclick="switchTab('scorecard')" id="tab-scorecard" class="px-4 py-2 rounded-lg transition-all text-blue-600 bg-white shadow-sm flex items-center gap-1.5">
+            <i data-lucide="calculator" class="w-4 h-4"></i> แบบประเมิน Scorecard
+          </button>
+          <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i> แดชบอร์ดสรุปผล (Charts)
+          </button>
+          <button onclick="switchTab('suppliers')" id="tab-suppliers" class="px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+            <i data-lucide="users" class="w-4 h-4"></i> รายชื่อ Supplier ทั้งหมด
+          </button>
+          <button onclick="switchTab('commodities')" id="tab-commodities" class="px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+            <i data-lucide="tags" class="w-4 h-4"></i> จัดการ Commodity
+          </button>
+        </nav>
+
+        <!-- User Profile & Controls -->
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <span id="userRoleBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+              Admin
+            </span>
+          </div>
+          <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-100 transition-colors" title="ออกจากระบบ">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main id="mainContainer" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- VIEW 1: SCORECARD DASHBOARD -->
+    <div id="view-scorecard" class="space-y-6">
+      
+      <!-- Top Action Bar -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+        <div class="flex flex-wrap items-center gap-3 flex-1">
+          <!-- Supplier Dropdown -->
+          <div class="min-w-[280px]">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">เลือก Supplier (ผู้ส่งมอบ)</label>
+            <select id="scorecardSupplierSelect" onchange="loadSupplierScorecard()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 font-medium">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+
+          <!-- Evaluation Period -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">รอบการประเมิน / ประจำเดือน</label>
+            <input type="month" id="evalPeriod" value="2026-11" onchange="calculateScores()" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2.5">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="saveEvaluation()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i> บันทึกข้อมูล
+          </button>
+          <button onclick="printScorecard()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium text-sm px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+            <i data-lucide="printer" class="w-4 h-4"></i> พิมพ์หน้าเดียว (Print A4)
+          </button>
+        </div>
+      </div>
+
+      <!-- AUTO GRADE D ALERT BANNER (CAR & EMAIL TRIGGER) -->
+      <div id="gradeDAlertBanner" class="hidden bg-red-50 border-l-4 border-red-600 p-4 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
+        <div class="flex items-start gap-3">
+          <div class="p-2 bg-red-100 text-red-600 rounded-lg shrink-0 mt-0.5">
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-red-900">แจ้งเตือนวิกฤต: ผลการประเมินต่ำกว่าเกณฑ์มาตรฐาน (GRADE D &lt; 70 คะแนน)</h4>
+            <p class="text-xs text-red-700 mt-0.5">ตามข้อกำหนด IATF 16949 ข้อ 8.4.2.4 ต้องดำเนินการออกใบแก้ไขป้องกัน (Supplier CAR) และแจ้งเตือนผู้ส่งมอบทันที</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <button onclick="openCarModal()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+            <i data-lucide="file-warning" class="w-4 h-4"></i> ออกใบ CAR อัตโนมัติ
+          </button>
+          <button onclick="sendAlertEmail()" class="bg-white hover:bg-red-50 text-red-700 border border-red-300 text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+            <i data-lucide="mail" class="w-4 h-4"></i> ส่งอีเมลแจ้งเตือน
+          </button>
+        </div>
+      </div>
+
+      <!-- PRINTABLE EVALUATION REPORT CARD -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 print-card">
+        
+        <!-- DOCUMENT HEADER (WITH DOC NO. THB-QP-06-6 & REV DATE) -->
+        <div class="flex justify-between items-start pb-3 border-b border-slate-200 mb-3 print-compact-mb gap-4">
+          <div class="flex items-center gap-3">
+            <img id="printLogo" src="https://via.placeholder.com/150x50?text=THB+LOGO" alt="THB Logo" class="h-9 object-contain">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 tracking-tight">THAI HANSUNG BOLT CO., LTD.</h2>
+              <p class="text-xs font-semibold text-slate-700">รายงานการประเมินสมรรถนะผู้ส่งมอบ (Supplier Performance Evaluation Report)</p>
+              <p class="text-[10px] text-slate-500">อ้างอิงข้อกำหนด ISO/IATF 16949: Clause 8.4.2.4 Supplier Performance Monitoring</p>
+            </div>
+          </div>
+
+          <!-- Document Control Box -->
+          <div class="text-right flex flex-col items-end gap-1 shrink-0">
+            <span class="text-[10px] font-bold text-slate-800">เอกสารฝ่ายประกันคุณภาพ / จัดซื้อ</span>
+            <div class="doc-control-box font-mono">
+              <div><strong>Doc No.:</strong> THB-QP-06-6</div>
+              <div><strong>Rev date:</strong> 11-11-26</div>
+              <div><strong>Rev:</strong> 00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUPPLIER INFO SUMMARY BOX -->
+        <div class="bg-slate-50 rounded-xl p-2.5 print-compact-p border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-2 mb-3 print-compact-mb text-xs">
+          <div>
+            <span class="font-semibold text-slate-400 uppercase tracking-wider block text-[10px]">ชื่อ Supplier</span>
+            <span id="dispSupplierName" class="font-bold text-slate-900 text-sm">-</span>
+            <span id="dispSupplierCode" class="font-mono text-slate-500 block text-[10px]">-</span>
+          </div>
+          <div>
+            <span class="font-semibold text-slate-400 uppercase tracking-wider block text-[10px]">ประเภทสินค้า/กระบวนการ (Commodity)</span>
+            <span id="dispSupplierCommodity" class="font-semibold text-blue-700 text-xs">-</span>
+          </div>
+          <div>
+            <span class="font-semibold text-slate-400 uppercase tracking-wider block text-[10px]">ข้อมูลติดต่อ / อีเมล</span>
+            <span id="dispSupplierContact" class="text-slate-700 font-medium block text-xs">-</span>
+            <span id="dispSupplierEmail" class="text-slate-500 block text-[10px]">-</span>
+          </div>
+        </div>
+
+        <!-- SCORE DISPLAY BANNER -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3 print-compact-mb">
+          <div class="bg-slate-900 text-white p-3 rounded-xl text-center flex flex-col justify-center">
+            <span class="text-[10px] text-slate-400 font-medium">คะแนนประเมินรวม</span>
+            <div class="text-2xl font-extrabold my-0.5"><span id="totalScore">100</span> <span class="text-xs text-slate-400 font-normal">/ 100</span></div>
+            <span class="text-[9px] text-slate-400">Total Scorecard Points</span>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center flex flex-col justify-center">
+            <span class="text-[10px] text-slate-500 font-medium">ระดับผลการประเมิน</span>
+            <div id="gradeBadge" class="text-xl font-bold my-0.5 text-emerald-600">GRADE A</div>
+            <span id="gradeDesc" class="text-[10px] font-medium text-emerald-700">ดีเยี่ยม (Excellent)</span>
+          </div>
+
+          <div class="md:col-span-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex flex-col justify-between">
+            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">เกณฑ์ระดับคะแนน (Evaluation Grading Criterion)</span>
+            <div class="grid grid-cols-4 gap-1 text-center text-[10px] mt-1">
+              <div class="bg-emerald-100 text-emerald-800 p-1 rounded font-semibold">A: 90-100</div>
+              <div class="bg-blue-100 text-blue-800 p-1 rounded font-semibold">B: 80-89</div>
+              <div class="bg-amber-100 text-amber-800 p-1 rounded font-semibold">C: 70-79</div>
+              <div class="bg-red-100 text-red-800 p-1 rounded font-semibold">D: &lt;70</div>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-0.5">* หมายเหตุ: กรณีได้ Grade C หรือ D Supplier ต้องจัดทำ CAR/8D Report ชี้แจง และตอบกลับภายใน 7 วันทำการหลังจากวันที่ Issued</p>
+          </div>
+        </div>
+
+        <!-- 4 MINIMUM PERFORMANCE INDICATORS FORM/TABLE -->
+        <div class="mb-3 print-compact-mb overflow-x-auto">
+          <h3 class="text-xs font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
+            <i data-lucide="list-checks" class="w-3.5 h-3.5 text-blue-600"></i> ตัวชี้วัดขั้นต่ำ 4 ด้าน (MINIMUM 4 PERFORMANCE INDICATORS)
+          </h3>
+          
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-100 border-y border-slate-200 text-[11px] font-semibold text-slate-700">
+                <th class="p-1.5 w-1/3">หัวข้อตัวชี้วัด (IATF 16949 Clause 8.4.2.4)</th>
+                <th class="p-1.5 text-center w-16">ค่าน้ำหนัก</th>
+                <th class="p-1.5 text-center">ข้อมูลย้อนหลัง / ตัวเลขจริง</th>
+                <th class="p-1.5 text-center w-20">คะแนนได้</th>
+                <th class="p-1.5">การแปลผล / เกณฑ์ประเมิน</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              
+              <!-- Indicator 1: Product Conformity -->
+              <tr>
+                <td class="p-1.5">
+                  <div class="font-bold text-slate-900 text-[11px]">1. อัตราของเสีย / ความสอดคล้องผลิตภัณฑ์</div>
+                  <div class="text-[10px] text-slate-500">PPM / Rejection Rate</div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-slate-700">35%</td>
+                <td class="p-1.5 text-center">
+                  <div class="flex items-center gap-1 justify-center">
+                    <input type="number" id="inputPpm" value="0" min="0" oninput="calculateScores()" class="w-18 p-1 border border-slate-300 rounded text-center text-xs font-semibold no-print">
+                    <span class="print-only font-bold" id="printPpm">0</span>
+                    <span class="text-[10px] text-slate-500">PPM</span>
+                  </div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-blue-600" id="scoreConformity">35.0</td>
+                <td class="p-1.5 text-[10px] text-slate-600">PPM = 0 (35 เต็ม) | PPM &gt; 500 (0 คะแนน)</td>
+              </tr>
+
+              <!-- Indicator 2: Customer Disruptions -->
+              <tr>
+                <td class="p-1.5">
+                  <div class="font-bold text-slate-900 text-[11px]">2. ปัญหาลูกค้าหยุดชะงัก (Disruptions)</div>
+                  <div class="text-[10px] text-slate-500">Yard Hold, Line Stop หรือ Stop Ship</div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-slate-700">25%</td>
+                <td class="p-1.5 text-center">
+                  <div class="flex items-center gap-1 justify-center">
+                    <input type="number" id="inputDisruptions" value="0" min="0" oninput="calculateScores()" class="w-18 p-1 border border-slate-300 rounded text-center text-xs font-semibold no-print">
+                    <span class="print-only font-bold" id="printDisruptions">0</span>
+                    <span class="text-[10px] text-slate-500">ครั้ง</span>
+                  </div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-blue-600" id="scoreDisruptions">25.0</td>
+                <td class="p-1.5 text-[10px] text-slate-600">0 ครั้ง (25 เต็ม) | หัก 10 คะแนน/ครั้ง</td>
+              </tr>
+
+              <!-- Indicator 3: Delivery OTD -->
+              <tr>
+                <td class="p-1.5">
+                  <div class="font-bold text-slate-900 text-[11px]">3. ความตรงต่อเวลาส่งมอบ (Delivery OTD)</div>
+                  <div class="text-[10px] text-slate-500">% On-Time In-Full</div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-slate-700">25%</td>
+                <td class="p-1.5 text-center">
+                  <div class="flex items-center gap-1 justify-center">
+                    <input type="number" id="inputOtd" value="100" min="0" max="100" oninput="calculateScores()" class="w-18 p-1 border border-slate-300 rounded text-center text-xs font-semibold no-print">
+                    <span class="print-only font-bold" id="printOtd">100</span>
+                    <span class="text-[10px] text-slate-500">%</span>
+                  </div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-blue-600" id="scoreOtd">25.0</td>
+                <td class="p-1.5 text-[10px] text-slate-600">100% (25 คะแนน) | คำนวณตาม % OTD จริง</td>
+              </tr>
+
+              <!-- Indicator 4: Premium Freight -->
+              <tr>
+                <td class="p-1.5">
+                  <div class="font-bold text-slate-900 text-[11px]">4. ค่าขนส่งพิเศษ (Premium Freight)</div>
+                  <div class="text-[10px] text-slate-500">ค่าขนส่งด่วนกรณีส่งไม่ทันหรือมีปัญหา</div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-slate-700">15%</td>
+                <td class="p-1.5 text-center">
+                  <div class="flex flex-col gap-0.5 items-center justify-center">
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="inputFreightCount" value="0" min="0" oninput="calculateScores()" class="w-14 p-0.5 border border-slate-300 rounded text-center text-[11px] font-semibold no-print" placeholder="ครั้ง">
+                      <span class="print-only font-bold text-[11px]" id="printFreightCount">0</span>
+                      <span class="text-[10px] text-slate-500">ครั้ง</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="inputFreightCost" value="0" min="0" oninput="calculateScores()" class="w-14 p-0.5 border border-slate-300 rounded text-center text-[11px] font-semibold no-print" placeholder="บาท">
+                      <span class="print-only font-bold text-[10px]" id="printFreightCost">0</span>
+                      <span class="text-[10px] text-slate-500">THB</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="p-1.5 text-center font-bold text-blue-600" id="scoreFreight">15.0</td>
+                <td class="p-1.5 text-[10px] text-slate-600">0 ครั้ง (15 เต็ม) | หัก 5 คะแนน/ครั้ง</td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ATTACHMENT SECTION WITH AUTO ZIP COMPRESSION -->
+        <div class="mb-3 print-compact-mb bg-slate-50 p-2.5 print-compact-p rounded-xl border border-slate-200 no-print">
+          <h4 class="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-blue-600"></i> เอกสารแนบหลักฐาน (Evidence Attachments) - ระบบบีบอัดไฟล์อัตโนมัติ (Auto ZIP)
+          </h4>
+          <div class="flex items-center gap-3">
+            <input type="file" id="fileInput" multiple onchange="handleFileUpload(event)" class="text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+            <span id="compressStatus" class="text-xs text-slate-500 italic"></span>
+          </div>
+          <!-- Compressed Files List -->
+          <ul id="fileList" class="mt-2 space-y-1 text-xs">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+
+        <!-- SIGNATURE SECTION (FORCED 2 COLUMNS LEFT/RIGHT SIDE-BY-SIDE) -->
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 text-xs">
+          
+          <!-- Auditor / Purchaser Sign (LEFT) -->
+          <div class="border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-700 text-[11px]">ผู้ประเมิน (THB Auditor / Purchasing)</span>
+              <button onclick="clearSignature('auditor')" class="text-[10px] text-red-600 hover:underline no-print">ล้าง</button>
+            </div>
+            <div class="bg-white border border-slate-300 rounded-lg overflow-hidden">
+              <canvas id="canvasAuditor" class="w-full h-14 touch-none cursor-crosshair"></canvas>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-[10px]">
+              <select id="auditorSelect" class="bg-transparent font-medium border-b border-slate-300 pb-0.5 outline-none no-print">
+                <option>ผู้ประเมิน: ฝ่ายจัดซื้อ THB</option>
+                <option>คุณอัครชัย (QA/QC)</option>
+                <option>คุณเยาวดี (Purchasing)</option>
+              </select>
+              <span class="print-only text-slate-600">ผู้ประเมิน: ฝ่ายจัดซื้อ THB</span>
+              <span class="text-slate-400">วันที่: 12/11/2026</span>
+            </div>
+          </div>
+
+          <!-- Supplier Sign (RIGHT) -->
+          <div class="border border-slate-200 rounded-xl p-2.5 bg-slate-50">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-slate-700 text-[11px]">ตัวแทนผู้ส่งมอบ (Supplier Acknowledgment)</span>
+              <button onclick="clearSignature('supplier')" class="text-[10px] text-red-600 hover:underline no-print">ล้าง</button>
+            </div>
+            <div class="bg-white border border-slate-300 rounded-lg overflow-hidden">
+              <canvas id="canvasSupplier" class="w-full h-14 touch-none cursor-crosshair"></canvas>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-[10px]">
+              <select id="supplierSignSelect" class="bg-transparent font-medium border-b border-slate-300 pb-0.5 outline-none no-print">
+                <option>ผู้แทน Supplier (รับทราบผล)</option>
+                <option>ผู้จัดการฝ่ายประกันคุณภาพ Supplier</option>
+              </select>
+              <span class="print-only text-slate-600">ผู้แทน Supplier (รับทราบผล)</span>
+              <span class="text-slate-400">วันที่: 12/11/2026</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 2: DASHBOARD ANALYTICS & CHARTS -->
+    <div id="view-dashboard" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Chart 1: Grade Distribution -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <div class="w-full flex justify-between items-center mb-4">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i> สัดส่วนเกรดประเมินผู้ส่งมอบ (Grade Distribution)
+            </h3>
+          </div>
+          <div class="w-full max-w-xs h-64 relative flex items-center justify-center">
+            <canvas id="gradeChart"></canvas>
+          </div>
+          <p class="text-xs text-slate-500 mt-4 text-center">แสดงสัดส่วนประสิทธิภาพ Supplier 30 ราย (A: ดีเยี่ยม, B: ดี, C: พอใช้, D: ต้องปรับปรุง)</p>
+        </div>
+
+        <!-- Chart 2: Commodity Breakdown -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <div class="w-full flex justify-between items-center mb-4">
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-600"></i> จำนวน Supplier ตามประเภทสินค้า (Commodity)
+            </h3>
+          </div>
+          <div class="w-full h-64 relative flex items-center justify-center">
+            <canvas id="commodityChart"></canvas>
+          </div>
+          <p class="text-xs text-slate-500 mt-4 text-center">จำแนกตามหมวดหมู่วัตถุดิบและกระบวนการผลิต</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: SUPPLIERS DIRECTORY TAB -->
+    <div id="view-suppliers" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">รายชื่อผู้ส่งมอบทั้งหมด (Supplier Directory)</h3>
+            <p class="text-xs text-slate-500">จัดการข้อมูลผู้ส่งมอบในระบบ 30 ราย</p>
+          </div>
+          <button onclick="openSupplierModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors">
+            <i data-lucide="plus" class="w-4 h-4"></i> เพิ่ม Supplier ใหม่
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-xs font-semibold text-slate-600 uppercase tracking-wider border-y border-slate-200">
+              <tr>
+                <th class="p-3">รหัส</th>
+                <th class="p-3">ชื่อบริษัท Supplier</th>
+                <th class="p-3">Commodity</th>
+                <th class="p-3">ผู้ติดต่อ / อีเมล</th>
+                <th class="p-3 text-center">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="supplierTableBody" class="divide-y divide-slate-200">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: COMMODITY MANAGEMENT TAB -->
+    <div id="view-commodities" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">จัดการหมวดหมู่สินค้า / กระบวนการ (Commodity)</h3>
+            <p class="text-xs text-slate-500">เพิ่ม เลื่อน หรือแก้ไขประเภทงานของผู้ส่งมอบ</p>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+          <input type="text" id="newCommodityInput" placeholder="กรอกชื่อ Commodity ใหม่..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <button onclick="addCommodity()" class="bg-blue-600 text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">เพิ่ม</button>
+        </div>
+
+        <ul id="commodityList" class="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- AUTO SUPPLIER CAR MODAL (GRADE D ACTION) -->
+  <div id="carModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div id="carModalContent" class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 md:p-8 my-8 border border-slate-200">
+      
+      <!-- CAR Header -->
+      <div class="flex justify-between items-start pb-4 border-b-2 border-red-600 mb-6 gap-4">
+        <div>
+          <span class="inline-block px-2.5 py-0.5 bg-red-100 text-red-800 text-[11px] font-bold rounded uppercase tracking-wider mb-1">
+            Supplier Corrective Action Request (CAR)
+          </span>
+          <h3 class="text-xl font-bold text-slate-900">THAI HANSUNG BOLT CO., LTD.</h3>
+          <p class="text-xs text-slate-500">ใบแจ้งให้ผู้ส่งมอบดำเนินการแก้ไขและป้องกัน (อ้างอิง IATF 16949 Clause 8.4.2.4)</p>
+        </div>
+        <div class="text-right font-mono text-xs bg-slate-50 p-2.5 rounded border border-slate-300 shrink-0">
+          <div><strong>CAR No.:</strong> <span id="carDocNumber" class="text-red-600 font-bold">CAR-202611-001</span></div>
+          <div><strong>Issue Date:</strong> <span id="carIssueDate">12-11-2026</span></div>
+          <div><strong>Due Date (7 Days):</strong> <span id="carDueDate" class="font-bold">19-11-2026</span></div>
+        </div>
+      </div>
+
+      <!-- CAR Supplier Info -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 text-xs">
+        <div>
+          <span class="text-slate-400 font-semibold block">ถึงผู้ส่งมอบ (To Supplier):</span>
+          <span id="carSupplierName" class="text-sm font-bold text-slate-900">-</span>
+          <span id="carSupplierContact" class="text-slate-600 block mt-0.5">-</span>
+        </div>
+        <div>
+          <span class="text-slate-400 font-semibold block">รอบการประเมิน / ผลคะแนน (Evaluation Result):</span>
+          <span class="text-sm font-bold text-red-600">คะแนนรวม: <span id="carTotalScore">65</span> / 100 คะแนน (GRADE D)</span>
+          <span id="carPeriodDisp" class="text-slate-600 block mt-0.5">ประจำเดือน: 2026-11</span>
+        </div>
+      </div>
+
+      <!-- Auto-Detected Non-Conformities -->
+      <div class="mb-6">
+        <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+          1. รายละเอียดความไม่สอดคล้องที่ตรวจพบจาก Scorecard (Non-Conformity Details):
+        </label>
+        <textarea id="carNcDetails" rows="4" class="w-full border border-slate-300 rounded-xl p-3 text-xs text-slate-800 bg-red-50/30 focus:ring-2 focus:ring-red-500 outline-none leading-relaxed"></textarea>
+      </div>
+
+      <!-- Required Actions -->
+      <div class="mb-6">
+        <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+          2. สิ่งที่ผู้ส่งมอบต้องดำเนินการ (Required Actions from Supplier):
+        </label>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1.5">
+          <div>• <strong>ภายใน 24 ชั่วโมง:</strong> แจ้งมาตรการกักกันและคัดแยกสินค้าเบื้องต้น (Containment Action) เพื่อป้องกันผลกระทบต่อสายการผลิต THB</div>
+          <div>• <strong>ภายใน 7 วันทำการ:</strong> ส่งรายงานวิเคราะห์สาเหตุและแผนการแก้ไขป้องกัน (8D Report) กลับมายังฝ่าย QA/จัดซื้อ ภายในวันที่ <span id="carDueDateText">19-11-2026</span> หลังจากวันที่ Issued</div>
+        </div>
+      </div>
+
+      <!-- CAR Signatures -->
+      <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-xs mb-6">
+        <div class="border border-slate-200 rounded-lg p-3">
+          <div class="font-bold text-slate-700 mb-6">ผู้ออกใบ CAR (Issued By THB QA/Purchasing):</div>
+          <div class="border-b border-slate-400 w-3/4 mb-1"></div>
+          <div class="text-slate-500">วันที่: 12/11/2026</div>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-3">
+          <div class="font-bold text-slate-700 mb-6">ผู้รับทราบ (Acknowledged By Supplier):</div>
+          <div class="border-b border-slate-400 w-3/4 mb-1"></div>
+          <div class="text-slate-500">วันที่: ____/____/2026</div>
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="flex flex-wrap items-center justify-end gap-2 pt-2 no-print">
+        <button onclick="closeCarModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">ปิดหน้าต่าง</button>
+        <button onclick="sendAlertEmail(true)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-1.5 transition-colors">
+          <i data-lucide="mail" class="w-4 h-4"></i> ส่งใบ CAR ทางอีเมล
+        </button>
+        <button onclick="printCarDocument()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-1.5 transition-colors">
+          <i data-lucide="printer" class="w-4 h-4"></i> พิมพ์ใบ CAR (A4)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SUPPLIER EDIT/ADD MODAL -->
+  <div id="supplierModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+      <h3 id="modalTitle" class="text-base font-bold text-slate-900 mb-4">เพิ่ม Supplier ใหม่</h3>
+      <form onsubmit="saveSupplier(event)" class="space-y-4">
+        <input type="hidden" id="editSupplierId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">รหัส Supplier</label>
+          <input type="text" id="modalCode" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="SUP-031">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อบริษัท Supplier</label>
+          <input type="text" id="modalName" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Commodity</label>
+          <select id="modalCommodity" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ข้อมูลติดต่อ / เบอร์โทร</label>
+          <input type="text" id="modalContact" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="คุณ... (08x-xxx-xxxx)">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">อีเมลติดต่อ (สำหรับแจ้งเตือน / ส่งใบ CAR)</label>
+          <input type="email" id="modalEmail" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm" placeholder="qa@supplier.co.th">
+        </div>
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" onclick="closeSupplierModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">ยกเลิก</button>
+          <button type="submit" class="px-4 py-2 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    // System State Data
+    let currentUserRole = null;
+    let signaturePadAuditor = null;
+    let signaturePadSupplier = null;
+    let currentTotalScore = 100;
+    let gradeChartInstance = null;
+    let commodityChartInstance = null;
+
+    let commodities = [
+      "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)",
+      "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)",
+      "Tooling & Dies (แม่พิมพ์และเครื่องมือ)",
+      "Chemicals & Lubricants (เคมีภัณฑ์และน้ำมันหล่อลื่น)",
+      "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)"
+    ];
+
+    let suppliers = [
+      { id: "SUP-001", name: "POS-SeAH Steel Wire (Thailand) Co.,Ltd.", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณคิม (038-123-456)", email: "sales@pos-seah.co.th" },
+      { id: "SUP-002", name: "CHIAO PAO METAL CO.,LTD", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณเฉิน (02-709-8888)", email: "info@chiaopaometal.com" },
+      { id: "SUP-003", name: "Menam Stainless Wire Co.,Ltd.", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณประเสริฐ (02-468-1122)", email: "sales@menamstainless.com" },
+      { id: "SUP-004", name: "KOS LIMITED", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณปาร์ค (038-555-123)", email: "kos_thailand@kos.co.kr" },
+      { id: "SUP-005", name: "GA JIN TECH CO.,LTD", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณอี (038-999-444)", email: "gajintech@gajin.co.kr" },
+      { id: "SUP-006", name: "BOOWON TECH CO.,LTD.", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณชอย (038-222-111)", email: "boowon@boowontech.com" },
+      { id: "SUP-007", name: "THAI MAIN TECH CO.,LTD", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณสมศักดิ์ (038-333-555)", email: "thaimain@thaimaintech.co.th" },
+      { id: "SUP-008", name: "SUNGIL (THAILAND) CO.,LTD.", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณคิม (038-777-888)", email: "sungil_th@sungil.co.th" },
+      { id: "SUP-009", name: "SIAM NEJI CO.,LTD", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณทานากะ (02-315-9988)", email: "siamneji@siamneji.co.th" },
+      { id: "SUP-010", name: "RIKA JTW HEAT TREATMENT CO.,LTD.", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณวิชัย (038-444-333)", email: "rika_jtw@rikajtw.co.th" },
+      { id: "SUP-011", name: "THAI JIN JER SURFACE TREATMENT CO.,LTD.", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณเฉิน (038-555-666)", email: "jinjersurface@gmail.com" },
+      { id: "SUP-012", name: "SK & K PLATING CO.,LTD", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณสุชาติ (038-111-999)", email: "skk_plating@hotmail.com" },
+      { id: "SUP-013", name: "TITERA CO.,LTD.", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณนิคม (02-899-2233)", email: "titera@titeratool.com" },
+      { id: "SUP-014", name: "บริษัท กรุงเทพสติลไวร์ จำกัด", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณอนันต์ (02-709-1234)", email: "qa@bangkoksteelwire.co.th" },
+      { id: "SUP-015", name: "บริษัท สยามยูไนเต็ดสตีล (SUS) จำกัด", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณสมชาย (038-456-7890)", email: "sales.cs@sus.co.th" },
+      { id: "SUP-016", name: "บริษัท ไทยออสเทมเปอร์ ชุบแข็ง จำกัด", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณประเสริฐ (038-211-555)", email: "qc@thaiaustemper.com" },
+      { id: "SUP-017", name: "บริษัท ที.พี.อี. เพลทติ้ง แอนด์ เซอร์วิส จำกัด", commodity: "Plating & Heat Treatment (ชุบเคลือบผิว/อบชุบความร้อน)", contact: "คุณธนพล (038-555-888)", email: "service@tpeplating.co.th" },
+      { id: "SUP-018", name: "บริษัท บางกอกอินดัสเตรียล ทูลส์ จำกัด", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณปิยะ (02-222-3344)", email: "sales@bkktools.co.th" },
+      { id: "SUP-019", name: "บริษัท อมตะพรีซิชั่น มัลติเดย์ จำกัด", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณกิตติ (038-999-111)", email: "eng@amataprecision.com" },
+      { id: "SUP-020", name: "บริษัท โมเดิร์นเคมีคอล แอนด์ โลจิสติกส์ จำกัด", commodity: "Chemicals & Lubricants (เคมีภัณฑ์และน้ำมันหล่อลื่น)", contact: "คุณวิภา (02-444-1122)", email: "cs@modernchem.co.th" },
+      { id: "SUP-021", name: "บริษัท คาสตรอล (ประเทศไทย) จำกัด", commodity: "Chemicals & Lubricants (เคมีภัณฑ์และน้ำมันหล่อลื่น)", contact: "คุณธนากร (02-684-0000)", email: "industrial.th@castrol.com" },
+      { id: "SUP-022", name: "บริษัท เคมีเทค ซัพพลาย แอนด์ เซอร์วิส จำกัด", commodity: "Chemicals & Lubricants (เคมีภัณฑ์และน้ำมันหล่อลื่น)", contact: "คุณรัชนี (038-333-4455)", email: "qa@chemitech.co.th" },
+      { id: "SUP-023", name: "บริษัท ศรีราชาแพคเกจจิ้ง แอนด์ โลจิสติกส์ จำกัด", commodity: "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)", contact: "คุณอารีรัตน์ (038-311-222)", email: "srirachapack@gmail.com" },
+      { id: "SUP-024", name: "บริษัท ไทยกล่องกระดาษลูกฟูก จำกัด", commodity: "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)", contact: "คุณสมปอง (02-999-3311)", email: "qc@thaicorrugated.co.th" },
+      { id: "SUP-025", name: "บริษัท ทีเคแอล โลจิสติกส์ แอนด์ ทรานสปอร์ต จำกัด", commodity: "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)", contact: "คุณทวี (038-888-4433)", email: "ops@tkllogistics.co.th" },
+      { id: "SUP-026", name: "บริษัท เอสซีจี แพคเกจจิ้ง จำกัด (มหาชน)", commodity: "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)", contact: "ศูนย์บริการลูกค้า (02-586-3333)", email: "packaging_cs@scg.com" },
+      { id: "SUP-027", name: "บริษัท ที.ซี.เอส. ไวร์ดรอว์อิ้ง จำกัด", commodity: "Wire Rod & Raw Material (เหล็กม้วน/วัตถุดิบ)", contact: "คุณชัยยุทธ (035-123-456)", email: "qa@tcswiredrawing.com" },
+      { id: "SUP-028", name: "บริษัท พรีซิชั่นดาย แอนด์ เทคโนโลยี จำกัด", commodity: "Tooling & Dies (แม่พิมพ์และเครื่องมือ)", contact: "คุณณรงค์ (02-741-8520)", email: "info@precisiondie.co.th" },
+      { id: "SUP-029", name: "บริษัท แหลมฉบังพาเลท แอนด์ วูดเคส จำกัด", commodity: "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)", contact: "คุณมานพ (038-490-123)", email: "lcbpallet@hotmail.com" },
+      { id: "SUP-030", name: "บริษัท ขนส่งด่วนภาคตะวันออก จำกัด", commodity: "Packaging & Logistics (บรรจุภัณฑ์และการขนส่ง)", contact: "คุณเอกชัย (038-920-555)", email: "dispatch@eastexpress.co.th" }
+    ];
+
+    let activeSupplierId = suppliers[0].id;
+    let currentFiles = [];
+
+    // Initialize App
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      initSignaturePads();
+      renderCommodityOptions();
+      renderSupplierDropdown();
+      renderSupplierTable();
+      renderCommodityList();
+      loadSupplierScorecard();
+      initDashboardCharts();
+    });
+
+    // Authentication Logic
+    function handleLogin(e) {
+      e.preventDefault();
+      const role = document.getElementById("loginRole").value;
+      const password = document.getElementById("loginPassword").value;
+      const errorEl = document.getElementById("loginError");
+
+      if ((role === "Admin" && password === "111220") || (role === "Purchasing" && password === "111221")) {
+        currentUserRole = role;
+        document.getElementById("userRoleBadge").innerText = role;
+        document.getElementById("loginModal").classList.add("hidden");
+        errorEl.classList.add("hidden");
+      } else {
+        errorEl.classList.remove("hidden");
+      }
+    }
+
+    function logout() {
+      currentUserRole = null;
+      document.getElementById("loginForm").reset();
+      document.getElementById("loginModal").classList.remove("hidden");
+    }
+
+    // Tab Switching
+    function switchTab(tabName) {
+      ['scorecard', 'dashboard', 'suppliers', 'commodities'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}`);
+        if(btn) {
+          btn.classList.remove('text-blue-600', 'bg-white', 'shadow-sm');
+          btn.classList.add('text-slate-600');
+        }
+      });
+
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      if(activeBtn) {
+        activeBtn.classList.add('text-blue-600', 'bg-white', 'shadow-sm');
+      }
+
+      if (tabName === 'dashboard') {
+        updateDashboardCharts();
+      }
+    }
+
+    // Logo Changer
+    function changeLogo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('navLogo').src = e.target.result;
+          document.getElementById('printLogo').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Signature Pads
+    function initSignaturePads() {
+      const canvas1 = document.getElementById('canvasAuditor');
+      const canvas2 = document.getElementById('canvasSupplier');
+      
+      signaturePadAuditor = new SignaturePad(canvas1, { backgroundColor: 'rgb(255, 255, 255)' });
+      signaturePadSupplier = new SignaturePad(canvas2, { backgroundColor: 'rgb(255, 255, 255)' });
+    }
+
+    function clearSignature(type) {
+      if (type === 'auditor') signaturePadAuditor.clear();
+      if (type === 'supplier') signaturePadSupplier.clear();
+    }
+
+    // Scorecard Calculations & Grade D Auto-Trigger
+    function calculateScores() {
+      const ppm = parseFloat(document.getElementById('inputPpm').value) || 0;
+      const disruptions = parseFloat(document.getElementById('inputDisruptions').value) || 0;
+      const otd = parseFloat(document.getElementById('inputOtd').value) || 0;
+      const freightCount = parseFloat(document.getElementById('inputFreightCount').value) || 0;
+      const freightCost = parseFloat(document.getElementById('inputFreightCost').value) || 0;
+
+      // Update Print Labels
+      document.getElementById('printPpm').innerText = ppm;
+      document.getElementById('printDisruptions').innerText = disruptions;
+      document.getElementById('printOtd').innerText = otd;
+      document.getElementById('printFreightCount').innerText = freightCount;
+      document.getElementById('printFreightCost').innerText = freightCost.toLocaleString();
+
+      // 1. Product Conformity Score (35 max)
+      let scoreConformity = Math.max(0, 35 - (ppm / 500) * 35);
+
+      // 2. Customer Disruptions Score (25 max)
+      let scoreDisruptions = Math.max(0, 25 - (disruptions * 10));
+
+      // 3. Delivery OTD Score (25 max)
+      let scoreOtd = Math.min(25, Math.max(0, (otd / 100) * 25));
+
+      // 4. Premium Freight Score (15 max)
+      let scoreFreight = Math.max(0, 15 - (freightCount * 5));
+
+      document.getElementById('scoreConformity').innerText = scoreConformity.toFixed(1);
+      document.getElementById('scoreDisruptions').innerText = scoreDisruptions.toFixed(1);
+      document.getElementById('scoreOtd').innerText = scoreOtd.toFixed(1);
+      document.getElementById('scoreFreight').innerText = scoreFreight.toFixed(1);
+
+      const total = Math.round(scoreConformity + scoreDisruptions + scoreOtd + scoreFreight);
+      currentTotalScore = total;
+      document.getElementById('totalScore').innerText = total;
+
+      // Grade Calculation & Alert Banner Control
+      const gradeBadge = document.getElementById('gradeBadge');
+      const gradeDesc = document.getElementById('gradeDesc');
+      const alertBanner = document.getElementById('gradeDAlertBanner');
+
+      if (total >= 90) {
+        gradeBadge.innerText = "GRADE A";
+        gradeBadge.className = "text-xl font-bold my-0.5 text-emerald-600";
+        gradeDesc.innerText = "ดีเยี่ยม (Excellent)";
+        alertBanner.classList.add('hidden');
+      } else if (total >= 80) {
+        gradeBadge.innerText = "GRADE B";
+        gradeBadge.className = "text-xl font-bold my-0.5 text-blue-600";
+        gradeDesc.innerText = "ดี (Good)";
+        alertBanner.classList.add('hidden');
+      } else if (total >= 70) {
+        gradeBadge.innerText = "GRADE C";
+        gradeBadge.className = "text-xl font-bold my-0.5 text-amber-600";
+        gradeDesc.innerText = "พอใช้ (Fair - ต้องปรับปรุง)";
+        alertBanner.classList.add('hidden');
+      } else {
+        gradeBadge.innerText = "GRADE D";
+        gradeBadge.className = "text-xl font-bold my-0.5 text-red-600";
+        gradeDesc.innerText = "ไม่ผ่านเกณฑ์ (Unsatisfactory)";
+        alertBanner.classList.remove('hidden');
+      }
+    }
+
+    // Dashboard Charts Initialization
+    function initDashboardCharts() {
+      const ctxGrade = document.getElementById('gradeChart').getContext('2d');
+      gradeChartInstance = new Chart(ctxGrade, {
+        type: 'doughnut',
+        data: {
+          labels: ['Grade A (90-100)', 'Grade B (80-89)', 'Grade C (70-79)', 'Grade D (<70)'],
+          datasets: [{
+            data: [22, 6, 2, 0],
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { family: 'Sarabun', size: 11 } } }
+          }
+        }
+      });
+
+      const ctxCommodity = document.getElementById('commodityChart').getContext('2d');
+      commodityChartInstance = new Chart(ctxCommodity, {
+        type: 'bar',
+        data: {
+          labels: commodities.map(c => c.split(' ')[0] + ' ' + c.split(' ')[1]),
+          datasets: [{
+            label: 'จำนวน Supplier',
+            data: [9, 8, 5, 4, 4],
+            backgroundColor: '#3b82f6',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 2 } },
+            x: { ticks: { font: { family: 'Sarabun', size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function updateDashboardCharts() {
+      if (commodityChartInstance) {
+        let counts = commodities.map(comm => suppliers.filter(s => s.commodity === comm).length);
+        commodityChartInstance.data.datasets[0].data = counts;
+        commodityChartInstance.update();
+      }
+    }
+
+    // Build Non-Conformity Summary Text for CAR & Email
+    function getNonConformitySummary() {
+      const ppm = parseFloat(document.getElementById('inputPpm').value) || 0;
+      const disruptions = parseFloat(document.getElementById('inputDisruptions').value) || 0;
+      const otd = parseFloat(document.getElementById('inputOtd').value) || 0;
+      const freightCount = parseFloat(document.getElementById('inputFreightCount').value) || 0;
+      const freightCost = parseFloat(document.getElementById('inputFreightCost').value) || 0;
+
+      let issues = [];
+      if (ppm > 0) issues.push(`- ด้านคุณภาพ (Product Conformity): พบอัตราของเสีย ${ppm} PPM (ได้ ${document.getElementById('scoreConformity').innerText}/35 คะแนน)`);
+      if (disruptions > 0) issues.push(`- ด้านผลกระทบต่อสายการผลิต (Customer Disruptions): เกิดปัญหา Line Stop / Yard Hold จำนวน ${disruptions} ครั้ง (ได้ ${document.getElementById('scoreDisruptions').innerText}/25 คะแนน)`);
+      if (otd < 100) issues.push(`- ด้านการส่งมอบตรงเวลา (Delivery OTD): อัตราการส่งมอบตรงเวลาอยู่ที่ ${otd}% (ได้ ${document.getElementById('scoreOtd').innerText}/25 คะแนน)`);
+      if (freightCount > 0) issues.push(`- ด้านการขนส่งพิเศษ (Premium Freight): เกิดการขนส่งด่วนพิเศษ ${freightCount} ครั้ง ค่าใช้จ่าย ${freightCost.toLocaleString()} บาท (ได้ ${document.getElementById('scoreFreight').innerText}/15 คะแนน)`);
+
+      if (issues.length === 0) {
+        issues.push("- คะแนนประเมินรวมต่ำกว่า 70 คะแนน (Grade D) ตามเกณฑ์การเฝ้าติดตามสมรรถนะผู้ส่งมอบ");
+      }
+      return issues.join("\n");
+    }
+
+    // Open Auto CAR Modal
+    function openCarModal() {
+      const supplier = suppliers.find(s => s.id === activeSupplierId);
+      const period = document.getElementById('evalPeriod').value;
+      const cleanPeriod = period.replace('-', '');
+      const supNum = supplier.id.split('-')[1] || '001';
+
+      document.getElementById('carDocNumber').innerText = `CAR-${cleanPeriod}-${supNum}`;
+      document.getElementById('carSupplierName').innerText = `${supplier.name} (${supplier.id})`;
+      document.getElementById('carSupplierContact').innerText = `ผู้ติดต่อ: ${supplier.contact} | Email: ${supplier.email || '-'}`;
+      document.getElementById('carTotalScore').innerText = currentTotalScore;
+      document.getElementById('carPeriodDisp').innerText = `ประจำเดือน: ${period}`;
+      document.getElementById('carNcDetails').value = getNonConformitySummary();
+
+      document.getElementById('carModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeCarModal() {
+      document.getElementById('carModal').classList.add('hidden');
+    }
+
+    // Send Email Alert
+    function sendAlertEmail(fromCarModal = false) {
+      const supplier = suppliers.find(s => s.id === activeSupplierId);
+      const period = document.getElementById('evalPeriod').value;
+      const carNo = document.getElementById('carDocNumber').innerText;
+      const recipientEmail = supplier.email || "";
+
+      const subject = encodeURIComponent(`[URGENT - GRADE D] แจ้งผลการประเมินสมรรถนะผู้ส่งมอบและใบ CAR (${carNo}) - ${supplier.name}`);
+      
+      const ncText = fromCarModal ? document.getElementById('carNcDetails').value : getNonConformitySummary();
+      const bodyText = `เรียน ${supplier.contact} (${supplier.name}),\n\n` +
+        `บริษัท ไทย ฮันซอง โบลท์ จำกัด (THAI HANSUNG BOLT CO., LTD.) ขอแจ้งผลการประเมินสมรรถนะผู้ส่งมอบ (Supplier Performance Evaluation) ประจำเดือน ${period} อ้างอิงข้อกำหนด IATF 16949 ข้อ 8.4.2.4 ดังนี้:\n\n` +
+        `• คะแนนประเมินรวม: ${currentTotalScore} / 100 คะแนน\n` +
+        `• ระดับผลการประเมิน: GRADE D (ไม่ผ่านเกณฑ์มาตรฐาน)\n` +
+        `• เลขที่ใบแจ้งแก้ไขป้องกัน (CAR No.): ${carNo}\n\n` +
+        `รายละเอียดหัวข้อที่ไม่เป็นไปตามเกณฑ์:\n${ncText}\n\n` +
+        `สิ่งที่ต้องดำเนินการ:\n` +
+        `1. แจ้งมาตรการกักกันสินค้าเบื้องต้น (Containment Action) ภายใน 24 ชั่วโมง\n` +
+        `2. จัดส่งรายงานวิเคราะห์สาเหตุและแผนการแก้ไขป้องกัน (8D Report) กลับมายังฝ่ายประกันคุณภาพ/จัดซื้อ ภายใน 7 วันทำการหลังจากวันที่ Issued\n\n` +
+        `จึงเรียนมาเพื่อโปรดดำเนินการแก้ไขโดยด่วน\n\n` +
+        `ขอแสดงความนับถือ,\n` +
+        `ฝ่ายประกันคุณภาพ / ฝ่ายจัดซื้อ\n` +
+        `THAI HANSUNG BOLT CO., LTD.`;
+
+      window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
+    }
+
+    // Print Controls
+    function printScorecard() {
+      document.body.classList.remove('printing-car');
+      window.print();
+    }
+
+    function printCarDocument() {
+      document.body.classList.add('printing-car');
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('printing-car');
+      }, 500);
+    }
+
+    // File Upload & ZIP Compression Simulation
+    async function handleFileUpload(event) {
+      const files = event.target.files;
+      if (!files.length) return;
+
+      const statusEl = document.getElementById('compressStatus');
+      statusEl.innerText = "กำลังบีบอัดไฟล์ (Compressing ZIP)...";
+
+      const zip = new JSZip();
+      for (let i = 0; i < files.length; i++) {
+        zip.file(files[i].name, files[i]);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const origSize = Array.from(files).reduce((acc, f) => acc + f.size, 0);
+      const zipSize = zipBlob.size;
+
+      const zipFileName = `Evidence_${activeSupplierId}_${Date.now()}.zip`;
+      currentFiles.push({
+        name: zipFileName,
+        size: zipSize,
+        origSize: origSize,
+        blob: zipBlob
+      });
+
+      statusEl.innerText = `บีบอัดสำเร็จ! ลดขนาดลง ${(100 - (zipSize/origSize * 100)).toFixed(0)}%`;
+      renderFileList();
+    }
+
+    function renderFileList() {
+      const listEl = document.getElementById('fileList');
+      listEl.innerHTML = currentFiles.map((file, idx) => `
+        <li class="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200">
+          <div class="flex items-center gap-2">
+            <i data-lucide="archive" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span class="font-medium text-slate-700">${file.name}</span>
+            <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-mono">
+              ZIP (${(file.size / 1024).toFixed(1)} KB)
+            </span>
+          </div>
+          <button onclick="removeFile(${idx})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </li>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function removeFile(idx) {
+      currentFiles.splice(idx, 1);
+      renderFileList();
+    }
+
+    // Supplier Rendering & CRUD
+    function renderSupplierDropdown() {
+      const select = document.getElementById('scorecardSupplierSelect');
+      select.innerHTML = suppliers.map(s => `
+        <option value="${s.id}">${s.id} - ${s.name}</option>
+      `).join('');
+    }
+
+    function loadSupplierScorecard() {
+      const select = document.getElementById('scorecardSupplierSelect');
+      activeSupplierId = select.value;
+      const supplier = suppliers.find(s => s.id === activeSupplierId);
+
+      if (supplier) {
+        document.getElementById('dispSupplierName').innerText = supplier.name;
+        document.getElementById('dispSupplierCode').innerText = supplier.id;
+        document.getElementById('dispSupplierCommodity').innerText = supplier.commodity;
+        document.getElementById('dispSupplierContact').innerText = supplier.contact;
+        document.getElementById('dispSupplierEmail').innerText = supplier.email || '-';
+      }
+      calculateScores();
+    }
+
+    function renderSupplierTable() {
+      const tbody = document.getElementById('supplierTableBody');
+      tbody.innerHTML = suppliers.map(s => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono font-bold text-slate-700">${s.id}</td>
+          <td class="p-3 font-semibold text-slate-900">${s.name}</td>
+          <td class="p-3 text-xs text-blue-700 font-medium">${s.commodity}</td>
+          <td class="p-3 text-xs text-slate-600">
+            <div>${s.contact}</div>
+            <div class="text-slate-400 font-mono">${s.email || '-'}</div>
+          </td>
+          <td class="p-3 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <button onclick="editSupplier('${s.id}')" class="p-1 text-slate-600 hover:text-blue-600" title="แก้ไข"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+              <button onclick="deleteSupplier('${s.id}')" class="p-1 text-slate-600 hover:text-red-600" title="ลบ"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openSupplierModal(supplier = null) {
+      document.getElementById('supplierModal').classList.remove('hidden');
+      renderCommodityOptions();
+      
+      if (supplier) {
+        document.getElementById('modalTitle').innerText = "แก้ไขข้อมูล Supplier";
+        document.getElementById('editSupplierId').value = supplier.id;
+        document.getElementById('modalCode').value = supplier.id;
+        document.getElementById('modalName').value = supplier.name;
+        document.getElementById('modalCommodity').value = supplier.commodity;
+        document.getElementById('modalContact').value = supplier.contact;
+        document.getElementById('modalEmail').value = supplier.email || "";
+      } else {
+        document.getElementById('modalTitle').innerText = "เพิ่ม Supplier ใหม่";
+        document.getElementById('editSupplierId').value = "";
+        document.getElementById('modalCode').value = `SUP-${String(suppliers.length + 1).padStart(3, '0')}`;
+        document.getElementById('modalName').value = "";
+        document.getElementById('modalContact').value = "";
+        document.getElementById('modalEmail').value = "";
+      }
+    }
+
+    function closeSupplierModal() {
+      document.getElementById('supplierModal').classList.add('hidden');
+    }
+
+    function saveSupplier(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editSupplierId').value;
+      const code = document.getElementById('modalCode').value;
+      const name = document.getElementById('modalName').value;
+      const commodity = document.getElementById('modalCommodity').value;
+      const contact = document.getElementById('modalContact').value;
+      const email = document.getElementById('modalEmail').value;
+
+      if (editId) {
+        const index = suppliers.findIndex(s => s.id === editId);
+        if (index !== -1) {
+          suppliers[index] = { id: code, name, commodity, contact, email };
+        }
+      } else {
+        suppliers.push({ id: code, name, commodity, contact, email });
+      }
+
+      closeSupplierModal();
+      renderSupplierDropdown();
+      renderSupplierTable();
+      loadSupplierScorecard();
+      updateDashboardCharts();
+    }
+
+    function editSupplier(id) {
+      const supplier = suppliers.find(s => s.id === id);
+      if (supplier) openSupplierModal(supplier);
+    }
+
+    function deleteSupplier(id) {
+      if (confirm(`คุณต้องการลบ Supplier รหัส ${id} ใช่หรือไม่?`)) {
+        suppliers = suppliers.filter(s => s.id !== id);
+        renderSupplierDropdown();
+        renderSupplierTable();
+        loadSupplierScorecard();
+        updateDashboardCharts();
+      }
+    }
+
+    // Commodity Management
+    function renderCommodityOptions() {
+      const modalSelect = document.getElementById('modalCommodity');
+      modalSelect.innerHTML = commodities.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    function renderCommodityList() {
+      const list = document.getElementById('commodityList');
+      list.innerHTML = commodities.map((c, index) => `
+        <li class="p-3 bg-white flex items-center justify-between text-sm">
+          <span class="font-medium text-slate-700">${c}</span>
+          <div class="flex items-center gap-1">
+            <button onclick="moveCommodity(${index}, -1)" class="p-1 text-slate-400 hover:text-slate-700"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+            <button onclick="moveCommodity(${index}, 1)" class="p-1 text-slate-400 hover:text-slate-700"><i data-lucide="arrow-down" class="w-4 h-4"></i></button>
+            <button onclick="deleteCommodity(${index})" class="p-1 text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        </li>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function addCommodity() {
+      const input = document.getElementById('newCommodityInput');
+      if (input.value.trim()) {
+        commodities.push(input.value.trim());
+        input.value = "";
+        renderCommodityList();
+        renderCommodityOptions();
+      }
+    }
+
+    function moveCommodity(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex >= 0 && newIndex < commodities.length) {
+        const temp = commodities[index];
+        commodities[index] = commodities[newIndex];
+        commodities[newIndex] = temp;
+        renderCommodityList();
+        renderCommodityOptions();
+      }
+    }
+
+    function deleteCommodity(index) {
+      if (confirm("คุณแน่ใจหรือไม่ที่จะลบ Commodity นี้?")) {
+        commodities.splice(index, 1);
+        renderCommodityList();
+        renderCommodityOptions();
+      }
+    }
+
+    function saveEvaluation() {
+      if (currentTotalScore < 70) {
+        if (confirm("บันทึกข้อมูลเรียบร้อยแล้ว!\n\nตรวจพบคะแนนประเมินอยู่ในระดับ GRADE D (< 70 คะแนน) ต้องการเปิดใบ CAR อัตโนมัติเพื่อแจ้งเตือน Supplier ทันทีหรือไม่?")) {
+          openCarModal();
+        }
+      } else {
+        alert("บันทึกข้อมูลการประเมิน Scorecard เรียบร้อยแล้ว!");
+      }
+    }
+  </script>
+</body>
+</html>
